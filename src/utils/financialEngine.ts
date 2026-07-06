@@ -66,17 +66,27 @@ export const generateFinancialReport = (dataset: Dataset): FinancialReportData =
     }
   }
 
-  // Calculate top expense categories
+  // Calculate top expense categories (limit to Top 4 + Other)
   const categoryMap: Record<string, number> = {};
   data.forEach(row => {
-    const cat = row[categoryKey] || 'Uncategorized';
+    const rawCat = row[categoryKey];
+    const cat = rawCat !== undefined && rawCat !== null ? String(rawCat) : 'Uncategorized';
     const exp = parseNumber(row[expenseKey]);
     categoryMap[cat] = (categoryMap[cat] || 0) + exp;
   });
 
-  const topExpenseCategories = Object.entries(categoryMap)
+  const sortedCategories = Object.entries(categoryMap)
     .map(([category, value]) => ({ category, value }))
     .sort((a, b) => b.value - a.value);
+
+  const topExpenseCategories: { category: string; value: number }[] = [];
+  if (sortedCategories.length > 5) {
+    topExpenseCategories.push(...sortedCategories.slice(0, 4));
+    const otherSum = sortedCategories.slice(4).reduce((sum, item) => sum + item.value, 0);
+    topExpenseCategories.push({ category: 'Other Categories', value: otherSum });
+  } else {
+    topExpenseCategories.push(...sortedCategories);
+  }
 
   // Runway calculation (if netProfit is negative, assume a baseline capital reserve of $100k or 6x monthly cost)
   let runwayMonths: number | undefined = undefined;

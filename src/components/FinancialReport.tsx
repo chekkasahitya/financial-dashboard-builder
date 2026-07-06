@@ -71,31 +71,17 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
     // Build the expense categories table rows HTML (limiting to Top 3 + Other)
     let expensesRowsHtml = '';
     if (report.topExpenseCategories.length > 0) {
-      const top3 = report.topExpenseCategories.slice(0, 3);
-      const remaining = report.topExpenseCategories.slice(3);
-
-      top3.forEach((cat) => {
+      report.topExpenseCategories.forEach((cat) => {
         const share = report.totalExpenses > 0 ? (cat.value / report.totalExpenses) * 100 : 0;
+        const isOther = cat.category.toLowerCase().includes('other');
         expensesRowsHtml += `
-          <tr>
-            <td style="font-weight: 500;">${cat.category}</td>
+          <tr style="${isOther ? 'border-top: 1px dashed #cbd5e1; font-style: italic; color: #475569;' : ''}">
+            <td style="font-weight: ${isOther ? '400' : '500'};">${cat.category}</td>
             <td>${formatCurrency(cat.value)}</td>
             <td>${share.toFixed(1)}%</td>
           </tr>
         `;
       });
-
-      if (remaining.length > 0) {
-        const remainingVal = remaining.reduce((sum, c) => sum + c.value, 0);
-        const share = report.totalExpenses > 0 ? (remainingVal / report.totalExpenses) * 100 : 0;
-        expensesRowsHtml += `
-          <tr style="border-top: 1px dashed #cbd5e1; font-style: italic; color: #475569;">
-            <td>Other Categories (${remaining.length} items)</td>
-            <td>${formatCurrency(remainingVal)}</td>
-            <td>${share.toFixed(1)}%</td>
-          </tr>
-        `;
-      }
     } else {
       expensesRowsHtml = '<tr><td colspan="3" style="color: #64748b; font-style: italic;">No expense categories mapped.</td></tr>';
     }
