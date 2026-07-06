@@ -15,60 +15,257 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
     const rawFileName = dataset.fileName.replace(/\.[^/.]+$/, "");
     const dateFormatted = new Date().toLocaleString();
 
-    let md = `# FinVibe Executive Financial Standpoint Report\n\n`;
-    md += `**Dataset Source File:** ${dataset.fileName}\n\n`;
-    md += `**Analysis Compiled On:** ${dateFormatted}\n\n`;
-    md += `**Total Records Processed:** ${dataset.data.length} rows\n\n`;
-    md += `---\n\n`;
-
-    md += `## 📊 Financial KPI Scorecard\n\n`;
-    md += `| Financial Indicator | Calculated Value | Definition / Calculation |\n`;
-    md += `| :--- | :--- | :--- |\n`;
-    md += `| **Total Period Revenue** | ${formatCurrency(report.totalRevenue)} | Cumulative sales inflow |\n`;
-    md += `| **Total Operating Expenses** | ${formatCurrency(report.totalExpenses)} | Operating cost outflow |\n`;
-    md += `| **Net Operating Profit** | ${formatCurrency(report.netProfit)} | Revenue minus Expenses |\n`;
-    md += `| **Net Profit Margin** | ${report.profitMargin.toFixed(2)}% | Net Profit / Total Revenue |\n`;
-    md += `| **Timeline Growth Rate** | ${report.growthRate >= 0 ? '+' : ''}${report.growthRate.toFixed(2)}% | First-to-last record variance |\n`;
-    if (report.runwayMonths !== undefined) {
-      md += `| **Assumed Capital Runway** | ${report.runwayMonths.toFixed(1)} Months | Reserve of $100k divided by period burn |\n`;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Please allow popups to download the PDF report.");
+      return;
     }
-    md += `\n\n`;
 
-    md += `## 💡 AI Financial Commentary & Insights\n\n`;
+    // Build the insights list HTML
+    let insightsHtml = '';
     if (report.insights.length > 0) {
       report.insights.forEach((insight) => {
         const severityIndicator = insight.type.toUpperCase();
-        md += `### [${severityIndicator}] ${insight.title}\n`;
-        md += `${insight.text}\n\n`;
+        insightsHtml += `
+          <div class="insight-item insight-${insight.type}">
+            <div class="insight-title">[${severityIndicator}] ${insight.title}</div>
+            <div>${insight.text}</div>
+          </div>
+        `;
       });
     } else {
-      md += `*No insights generated.*\n\n`;
+      insightsHtml = '<p style="color: #64748b; font-style: italic;">No insights generated.</p>';
     }
 
-    md += `## 📉 Operating Expense Categories Breakdown\n\n`;
+    // Build the expense categories table rows HTML
+    let expensesRowsHtml = '';
     if (report.topExpenseCategories.length > 0) {
-      md += `| Expense Category | Cumulative Spend ($) | Contribution Share (%) |\n`;
-      md += `| :--- | :--- | :--- |\n`;
       report.topExpenseCategories.forEach((cat) => {
         const share = report.totalExpenses > 0 ? (cat.value / report.totalExpenses) * 100 : 0;
-        md += `| ${cat.category} | ${formatCurrency(cat.value)} | ${share.toFixed(1)}% |\n`;
+        expensesRowsHtml += `
+          <tr>
+            <td style="font-weight: 500;">${cat.category}</td>
+            <td>${formatCurrency(cat.value)}</td>
+            <td>${share.toFixed(1)}%</td>
+          </tr>
+        `;
       });
     } else {
-      md += `*No expense categories found in column mappings.*\n`;
+      expensesRowsHtml = '<tr><td colspan="3" style="color: #64748b; font-style: italic;">No expense categories mapped.</td></tr>';
     }
-    md += `\n\n`;
 
-    md += `---\n`;
-    md += `*Report auto-compiled by FinVibe automated dashboard compiler engines. Confirm details with certified accountants before making key investment/business actions.*\n`;
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>FinVibe Executive Report - ${rawFileName}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap');
+          body {
+            font-family: 'Inter', sans-serif;
+            color: #0f172a;
+            background: white;
+            margin: 40px;
+            line-height: 1.5;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          .title-area h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            margin: 0 0 5px 0;
+            color: #1e3a8a;
+          }
+          .title-area p {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0;
+          }
+          .logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 20px;
+            color: #2563eb;
+          }
+          .scorecard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+          }
+          .card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8fafc;
+          }
+          .card-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            margin-bottom: 5px;
+            font-weight: 600;
+          }
+          .card-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+          }
+          .card-change {
+            font-size: 11px;
+            margin-top: 5px;
+            font-weight: 500;
+          }
+          .insight-section {
+            margin-bottom: 30px;
+          }
+          .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 6px;
+            margin-bottom: 15px;
+            color: #1e293b;
+            font-weight: 600;
+          }
+          .insight-item {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 12.5px;
+            border-left: 4px solid #cbd5e1;
+          }
+          .insight-success { background: #ecfdf5; border-left-color: #10b981; color: #065f46; }
+          .insight-warning { background: #fffbeb; border-left-color: #f59e0b; color: #92400e; }
+          .insight-critical { background: #fef2f2; border-left-color: #ef4444; color: #991b1b; }
+          .insight-info { background: #eff6ff; border-left-color: #3b82f6; color: #1e40af; }
+          .insight-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12.5px;
+          }
+          th, td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 12px;
+            text-align: left;
+          }
+          th {
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+          }
+          .footer {
+            margin-top: 50px;
+            font-size: 10px;
+            color: #94a3b8;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
+          }
+          @media print {
+            body { margin: 20px; }
+            .card { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .insight-item { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .insight-success { background: #ecfdf5 !important; }
+            .insight-warning { background: #fffbeb !important; }
+            .insight-critical { background: #fef2f2 !important; }
+            .insight-info { background: #eff6ff !important; }
+            th { background: #f1f5f9 !important; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title-area">
+            <h1>Executive Financial Standpoint Report</h1>
+            <p>Dataset: <strong>${dataset.fileName}</strong> &bull; Compiled on ${dateFormatted} &bull; ${dataset.data.length} entries</p>
+          </div>
+          <div class="logo">FinVibe Dashboard</div>
+        </div>
 
-    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `FinVibe_Executive_Report_${rawFileName}.md`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+        <div class="scorecard-grid">
+          <div class="card">
+            <div class="card-label">Total Revenue</div>
+            <div class="card-value">${formatCurrency(report.totalRevenue)}</div>
+            <div class="card-change" style="color: ${report.growthRate >= 0 ? '#10b981' : '#ef4444'}">
+              ${report.growthRate >= 0 ? '▲' : '▼'} ${report.growthRate.toFixed(1)}% Growth
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-label">Total Expenses</div>
+            <div class="card-value">${formatCurrency(report.totalExpenses)}</div>
+            <div class="card-change" style="color: #64748b">
+              Avg: ${formatCurrency(report.averageExpense)} / period
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-label">Net Operating Profit</div>
+            <div class="card-value">${formatCurrency(report.netProfit)}</div>
+            <div class="card-change" style="color: ${report.netProfit >= 0 ? '#10b981' : '#ef4444'}">
+              ${report.netProfit >= 0 ? 'Net Surplus' : 'Net Deficit'}
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-label">Net Profit Margin</div>
+            <div class="card-value">${report.profitMargin.toFixed(1)}%</div>
+            <div class="card-change" style="color: #64748b">
+              Profitability Margin
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-section">
+          <div class="section-title">💡 Financial Standing Heuristics & Insights</div>
+          ${insightsHtml}
+        </div>
+
+        <div class="insight-section">
+          <div class="section-title">📊 Expense Category Distribution</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Expense Category</th>
+                <th>Cumulative Spend</th>
+                <th>Contribution share %</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${expensesRowsHtml}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          Report compiled by FinVibe Auto-Analytics. Confirmed data from source file ${dataset.fileName}.
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.close();
+            }, 300);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
   };
 
   const formatCurrency = (val: number) => {
@@ -121,15 +318,15 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
       {/* Report Actions Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '1rem 1.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Executive Analytical Report</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Generate and download a comprehensive markdown summary of this data model.</span>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Executive PDF Report</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Generate and compile a printable PDF summary outlining KPIs and financial standings.</span>
         </div>
         <button
           onClick={handleDownloadReport}
           className="btn btn-primary"
           style={{ fontSize: '0.8rem', padding: '0.6rem 1rem' }}
         >
-          <Download size={14} /> Export Executive Summary (.md)
+          <Download size={14} /> Download Executive Report (.pdf)
         </button>
       </div>
 
