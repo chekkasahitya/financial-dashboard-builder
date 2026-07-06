@@ -17,7 +17,14 @@ import {
   Legend,
   ComposedChart,
   ScatterChart,
-  Scatter
+  Scatter,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  RadialBarChart,
+  RadialBar
 } from 'recharts';
 import type { ChartType, Dataset, Theme } from '../types';
 import { parseNumber } from '../utils/financialEngine';
@@ -294,6 +301,54 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
           <Legend wrapperStyle={{ fontSize: '0.8rem', maxHeight: '50px', overflowY: 'auto' }} />
           <Scatter name={`${yKey} vs ${xKey}`} data={scatterData} fill={mainColor} />
         </ScatterChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (type === 'radar') {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
+          <PolarGrid stroke={gridStroke} />
+          <PolarAngleAxis dataKey={xKey} tick={{ fill: labelColor, fontSize: 9 }} />
+          <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fill: labelColor, fontSize: 8 }} />
+          <Radar name={yKey} dataKey={yKey} stroke={mainColor} fill={mainColor} fillOpacity={0.4} />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend wrapperStyle={{ fontSize: '0.8rem', maxHeight: '50px', overflowY: 'auto' }} />
+        </RadarChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (type === 'radialBar') {
+    // Grouping by Category or XKey for RadialBarChart
+    const groups: Record<string, number> = {};
+    chartData.forEach(row => {
+      const name = String(row[xKey] || 'Uncategorized');
+      groups[name] = (groups[name] || 0) + (row[yKey] as number);
+    });
+
+    const sorted = Object.entries(groups)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5); // top 5
+
+    const radialData = sorted.map(([name, value], index) => ({
+      name,
+      value,
+      fill: themeColors.colors[index % themeColors.colors.length]
+    }));
+
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="85%" barSize={10} data={radialData}>
+          <RadialBar
+            label={{ position: 'insideStart', fill: isDarkMode ? '#f8fafc' : '#0f172a', fontSize: 8 }}
+            background
+            dataKey="value"
+          />
+          <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+          <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '0.75rem', maxHeight: '180px', overflowY: 'auto' }} />
+        </RadialBarChart>
       </ResponsiveContainer>
     );
   }

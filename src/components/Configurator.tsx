@@ -29,6 +29,8 @@ const CHART_TYPES: { id: ChartType; name: string }[] = [
   { id: 'pie', name: 'Pie Chart' },
   { id: 'composed', name: 'Composed (Bar + Line)' },
   { id: 'scatter', name: 'Scatter Correlation Plot' },
+  { id: 'radar', name: 'Radar Comparison Chart' },
+  { id: 'radialBar', name: 'Radial Progress Rings' },
   { id: 'metric', name: 'Stat Aggregate Card' }
 ];
 

@@ -1,6 +1,6 @@
 export type Theme = 'sapphire' | 'emerald' | 'sunset' | 'midnight' | 'monochrome';
 export type DashboardStyle = 'grid' | 'sidebar' | 'tabs';
-export type ChartType = 'line' | 'bar' | 'area' | 'pie' | 'metric' | 'composed' | 'scatter';
+export type ChartType = 'line' | 'bar' | 'area' | 'pie' | 'metric' | 'composed' | 'scatter' | 'radar' | 'radialBar';
 
 export interface ColumnMapping {
   dateKey: string;
