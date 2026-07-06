@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Dataset, FinancialReportData } from '../types';
 import { generateFinancialReport } from '../utils/financialEngine';
-import { TrendingUp, TrendingDown, DollarSign, Percent, AlertCircle, ArrowUpRight, CheckCircle2, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Percent, AlertCircle, ArrowUpRight, CheckCircle2, Info, Download } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
 interface FinancialReportProps {
@@ -10,6 +10,66 @@ interface FinancialReportProps {
 
 export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => {
   const report: FinancialReportData = generateFinancialReport(dataset);
+
+  const handleDownloadReport = () => {
+    const rawFileName = dataset.fileName.replace(/\.[^/.]+$/, "");
+    const dateFormatted = new Date().toLocaleString();
+
+    let md = `# FinVibe Executive Financial Standpoint Report\n\n`;
+    md += `**Dataset Source File:** ${dataset.fileName}\n\n`;
+    md += `**Analysis Compiled On:** ${dateFormatted}\n\n`;
+    md += `**Total Records Processed:** ${dataset.data.length} rows\n\n`;
+    md += `---\n\n`;
+
+    md += `## 📊 Financial KPI Scorecard\n\n`;
+    md += `| Financial Indicator | Calculated Value | Definition / Calculation |\n`;
+    md += `| :--- | :--- | :--- |\n`;
+    md += `| **Total Period Revenue** | ${formatCurrency(report.totalRevenue)} | Cumulative sales inflow |\n`;
+    md += `| **Total Operating Expenses** | ${formatCurrency(report.totalExpenses)} | Operating cost outflow |\n`;
+    md += `| **Net Operating Profit** | ${formatCurrency(report.netProfit)} | Revenue minus Expenses |\n`;
+    md += `| **Net Profit Margin** | ${report.profitMargin.toFixed(2)}% | Net Profit / Total Revenue |\n`;
+    md += `| **Timeline Growth Rate** | ${report.growthRate >= 0 ? '+' : ''}${report.growthRate.toFixed(2)}% | First-to-last record variance |\n`;
+    if (report.runwayMonths !== undefined) {
+      md += `| **Assumed Capital Runway** | ${report.runwayMonths.toFixed(1)} Months | Reserve of $100k divided by period burn |\n`;
+    }
+    md += `\n\n`;
+
+    md += `## 💡 AI Financial Commentary & Insights\n\n`;
+    if (report.insights.length > 0) {
+      report.insights.forEach((insight) => {
+        const severityIndicator = insight.type.toUpperCase();
+        md += `### [${severityIndicator}] ${insight.title}\n`;
+        md += `${insight.text}\n\n`;
+      });
+    } else {
+      md += `*No insights generated.*\n\n`;
+    }
+
+    md += `## 📉 Operating Expense Categories Breakdown\n\n`;
+    if (report.topExpenseCategories.length > 0) {
+      md += `| Expense Category | Cumulative Spend ($) | Contribution Share (%) |\n`;
+      md += `| :--- | :--- | :--- |\n`;
+      report.topExpenseCategories.forEach((cat) => {
+        const share = report.totalExpenses > 0 ? (cat.value / report.totalExpenses) * 100 : 0;
+        md += `| ${cat.category} | ${formatCurrency(cat.value)} | ${share.toFixed(1)}% |\n`;
+      });
+    } else {
+      md += `*No expense categories found in column mappings.*\n`;
+    }
+    md += `\n\n`;
+
+    md += `---\n`;
+    md += `*Report auto-compiled by FinVibe automated dashboard compiler engines. Confirm details with certified accountants before making key investment/business actions.*\n`;
+
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `FinVibe_Executive_Report_${rawFileName}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -58,6 +118,21 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }} className="animate-fade-in">
       
+      {/* Report Actions Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '1rem 1.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Executive Analytical Report</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Generate and download a comprehensive markdown summary of this data model.</span>
+        </div>
+        <button
+          onClick={handleDownloadReport}
+          className="btn btn-primary"
+          style={{ fontSize: '0.8rem', padding: '0.6rem 1rem' }}
+        >
+          <Download size={14} /> Export Executive Summary (.md)
+        </button>
+      </div>
+
       {/* Visual Mathematical Scorecards */}
       <div className="metric-grid">
         
