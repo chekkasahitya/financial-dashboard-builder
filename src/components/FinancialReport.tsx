@@ -15,6 +15,37 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
     const rawFileName = dataset.fileName.replace(/\.[^/.]+$/, "");
     const dateFormatted = new Date().toLocaleString();
 
+    // 1. Generate text-heavy financial standing analyses
+    const revenueAnalysisText = `Total period revenue reached ${formatCurrency(report.totalRevenue)}, representing an average interval intake of ${formatCurrency(report.averageRevenue)}. Chronologically, sales progressed by ${report.growthRate.toFixed(1)}% from start to finish. ${
+      report.growthRate > 12
+        ? "This indicates strong sales expansion, rapid market acquisition, and expanding product demand."
+        : report.growthRate >= 0
+          ? "This shows stable, organic top-line revenue streams without significant scale-up spikes."
+          : "This reveals clear top-line contraction. Recommend reviewing client churn, sales pipeline drop-offs, or competitive pricing pressures."
+    }`;
+
+    const costAnalysisText = `Operating costs totaled ${formatCurrency(report.totalExpenses)}, showing a regular period expenditure of ${formatCurrency(report.averageExpense)}. ${
+      report.topExpenseCategories.length > 0
+        ? `The primary cost center was "${report.topExpenseCategories[0].category}", accounting for ${formatCurrency(report.topExpenseCategories[0].value)} (${(report.totalExpenses > 0 ? (report.topExpenseCategories[0].value / report.totalExpenses) * 100 : 0).toFixed(0)}% of total outlays).`
+        : "No categories were specified to determine spending concentrations."
+    } ${
+      report.totalExpenses > report.totalRevenue
+        ? "Warning: Expenses exceed incoming cash, generating an operating deficit. Direct financial audit of primary cost centers is advised."
+        : "Operational spending is well-aligned with income, leaving a secure operating cushion."
+    }`;
+
+    const marginsAnalysisText = `Net operating income resulted in ${formatCurrency(report.netProfit)}, corresponding to an operating profit margin of ${report.profitMargin.toFixed(1)}%. ${
+      report.profitMargin > 20
+        ? "A margin above 20% indicates healthy operational scale, high margins, and solid capital efficiency."
+        : report.profitMargin >= 0
+          ? "The operating margin is positive but narrow, making the business vulnerable to cost hikes. Audit vendor agreements to expand profit space."
+          : "The operating margin is in a deficit. The core business model is currently burning cash, requiring immediate expenditure adjustments."
+    }`;
+
+    const runwayAnalysisText = report.runwayMonths !== undefined
+      ? `Based on periodic burn rates and assuming a standard $100,000 cash reserve, the operational runway is approximately ${report.runwayMonths.toFixed(1)} months. Budget control protocols or capital raising plans should be initiated.`
+      : "The business is profitable and cash-flow positive. Runway is secure and operational sustainability remains high.";
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert("Please allow popups to download the PDF report.");
@@ -37,10 +68,13 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
       insightsHtml = '<p style="color: #64748b; font-style: italic;">No insights generated.</p>';
     }
 
-    // Build the expense categories table rows HTML
+    // Build the expense categories table rows HTML (limiting to Top 3 + Other)
     let expensesRowsHtml = '';
     if (report.topExpenseCategories.length > 0) {
-      report.topExpenseCategories.forEach((cat) => {
+      const top3 = report.topExpenseCategories.slice(0, 3);
+      const remaining = report.topExpenseCategories.slice(3);
+
+      top3.forEach((cat) => {
         const share = report.totalExpenses > 0 ? (cat.value / report.totalExpenses) * 100 : 0;
         expensesRowsHtml += `
           <tr>
@@ -50,6 +84,18 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
           </tr>
         `;
       });
+
+      if (remaining.length > 0) {
+        const remainingVal = remaining.reduce((sum, c) => sum + c.value, 0);
+        const share = report.totalExpenses > 0 ? (remainingVal / report.totalExpenses) * 100 : 0;
+        expensesRowsHtml += `
+          <tr style="border-top: 1px dashed #cbd5e1; font-style: italic; color: #475569;">
+            <td>Other Categories (${remaining.length} items)</td>
+            <td>${formatCurrency(remainingVal)}</td>
+            <td>${share.toFixed(1)}%</td>
+          </tr>
+        `;
+      }
     } else {
       expensesRowsHtml = '<tr><td colspan="3" style="color: #64748b; font-style: italic;">No expense categories mapped.</td></tr>';
     }
@@ -74,7 +120,7 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
             align-items: center;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
           }
           .title-area h1 {
             font-family: 'Outfit', sans-serif;
@@ -83,7 +129,7 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
             color: #1e3a8a;
           }
           .title-area p {
-            font-size: 12px;
+            font-size: 11px;
             color: #64748b;
             margin: 0;
           }
@@ -97,7 +143,7 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 15px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
           }
           .card {
             border: 1px solid #e2e8f0;
@@ -106,7 +152,7 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
             background: #f8fafc;
           }
           .card-label {
-            font-size: 10px;
+            font-size: 9.5px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             color: #64748b;
@@ -120,27 +166,27 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
             color: #0f172a;
           }
           .card-change {
-            font-size: 11px;
+            font-size: 10.5px;
             margin-top: 5px;
             font-weight: 500;
           }
           .insight-section {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
           }
           .section-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 15px;
+            font-size: 14.5px;
             border-bottom: 1px solid #cbd5e1;
             padding-bottom: 6px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             color: #1e293b;
             font-weight: 600;
           }
           .insight-item {
-            padding: 12px 15px;
+            padding: 10px 14px;
             border-radius: 6px;
-            margin-bottom: 12px;
-            font-size: 12.5px;
+            margin-bottom: 10px;
+            font-size: 12px;
             border-left: 4px solid #cbd5e1;
           }
           .insight-success { background: #ecfdf5; border-left-color: #10b981; color: #065f46; }
@@ -155,11 +201,11 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
-            font-size: 12.5px;
+            font-size: 12px;
           }
           th, td {
             border-bottom: 1px solid #e2e8f0;
-            padding: 10px 12px;
+            padding: 8px 10px;
             text-align: left;
           }
           th {
@@ -167,8 +213,14 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
             font-weight: 600;
             color: #475569;
           }
+          .narrative-p {
+            margin-bottom: 10px;
+            font-size: 12.5px;
+            color: #334155;
+            line-height: 1.6;
+          }
           .footer {
-            margin-top: 50px;
+            margin-top: 40px;
             font-size: 10px;
             color: #94a3b8;
             text-align: center;
@@ -228,12 +280,20 @@ export const FinancialReport: React.FC<FinancialReportProps> = ({ dataset }) => 
         </div>
 
         <div class="insight-section">
+          <div class="section-title">📝 Executive Financial Standing Analysis</div>
+          <div class="narrative-p"><strong>Revenue Trajectory:</strong> ${revenueAnalysisText}</div>
+          <div class="narrative-p"><strong>Operating Outflows & Cost Controls:</strong> ${costAnalysisText}</div>
+          <div class="narrative-p"><strong>Operating Margin & Profitability:</strong> ${marginsAnalysisText}</div>
+          <div class="narrative-p"><strong>Capital Runway & Sustainability:</strong> ${runwayAnalysisText}</div>
+        </div>
+
+        <div class="insight-section">
           <div class="section-title">💡 Financial Standing Heuristics & Insights</div>
           ${insightsHtml}
         </div>
 
         <div class="insight-section">
-          <div class="section-title">📊 Expense Category Distribution</div>
+          <div class="section-title">📊 Expense Category Distribution (Top 3)</div>
           <table>
             <thead>
               <tr>
